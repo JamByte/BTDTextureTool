@@ -3,6 +3,7 @@ using ImageProcessor.Imaging.Formats;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,14 +22,35 @@ namespace BTDTextureTool
 
         public bool SpiltImage(SpriteInformation si, string file, List<string> output)
         {
-          //  try
-           // {
-                    Image image = Image.FromFile(file);
+            //  try
+            // {
+            Bitmap b = new Bitmap(file);
+
                     
-                    Bitmap bm = new Bitmap(image);
+            Bitmap bm = new Bitmap(b.Width, b.Height);
+
+            JamBitMap jbm = new JamBitMap(bm);
+            JamBitMap jb = new JamBitMap(b);
+            for (int y = 0; y < b.Height; y++)
+            {
+                for (int x = 0; x < b.Width; x++)
+                {
+                    jbm.SetPixel(x, y, jb.GetPixel(x, y));
+                }
+            }
+            jb.Dispose();
+            jbm.Unlock();
                     string[] potato = file.Split('\\');
                     string path = file.Remove(file.Length - (potato[potato.Length - 1].Length), (potato[potato.Length - 1].Length));
-                    path += @"Spilt Textures\" + si.FrameInformation.Name;
+            string name = potato[potato.Length - 1].Split('.')[0];
+            if(name != si.FrameInformation.Name)
+            {
+                output.Add("Name of Image does not match the name of the image in the xml");
+                output.Add("Files will be saved to the folder with the name of the image");
+            }
+
+
+            path += @"Spilt Textures\" + name;
                     if (!Directory.Exists(path))
                     {
                         Directory.CreateDirectory(path);
@@ -76,7 +98,7 @@ namespace BTDTextureTool
                             }
                             else
                             {
-                                outputimage = bm.Clone(imagecrop, image.PixelFormat);
+                                outputimage = bm.Clone(imagecrop, bm.PixelFormat);
                             }
                             //outputimage = bm.Clone(imagecrop, image.PixelFormat);
                             outputimage.Save(pathanim + @"\" + si.FrameInformation.Animation[a].Cell[i].Name + ".png");
@@ -119,13 +141,12 @@ namespace BTDTextureTool
                 }
                         else 
                         {
-                            outputimage = bm.Clone(imagecrop, image.PixelFormat); 
+                            outputimage = bm.Clone(imagecrop, bm.PixelFormat); 
                         }
 
                         outputimage.Save(path + @"\" + si.FrameInformation.Cell[i].Name + ".png");
                     }
             bm.Dispose();
-            image.Dispose();
                 return true;
            // }
             //catch
@@ -191,8 +212,10 @@ namespace BTDTextureTool
             {
                 ushort xsize = (ushort)((ushort)allimages[i].img.Width+4);//2 for padding and 2 for duplicate pixels
                 ushort ysize = (ushort)((ushort)allimages[i].img.Height+4);//^
+
+                
                 bool spacefound = false;
-                int loopstopper = 100;
+                int loopstopper = 100;//incase of inf loops
                 while (!spacefound && loopstopper > 0)
                 {
                     for (int y = 0; y < ycount; y++)
@@ -201,11 +224,11 @@ namespace BTDTextureTool
                         {
                             if (x + xsize >= xcount || y + ysize >= ycount)
                             {
-                                x = ushort.MaxValue;
+                                x = ushort.MaxValue;//if out of bounds grow the image 
                             }
                             else
                             {
-                                if (gird[y][x] == 0)
+                                if (gird[y][x] == 0)//if no other image has already taken this spot
                                 {
                                     bool otherimg = false;
                                     for (int xx = 0; xx < xsize; xx++)
@@ -224,7 +247,7 @@ namespace BTDTextureTool
                                             otherimg = true;
                                             break;
                                         }
-                                    }
+                                    }//it just works 
                                     if (!otherimg)
                                     {
                                         for (int yy = 0; yy < ysize; yy++)
@@ -287,7 +310,7 @@ namespace BTDTextureTool
                         tempimage tempimage = allimages[index - 1];
                         int rx = (x) - (tempimage.x+2);
                         int ry = (y) - (tempimage.y+2);
-                        if (rx == -2 || rx == tempimage.img.Width + 2 || ry == -2 || ry == tempimage.img.Height + 2)
+                        if (rx == -2 || rx == tempimage.img.Width + 1 || ry == -2 || ry == tempimage.img.Height + 1)
                         {
                             if (rx <= 0) { rx = 0; }
                             if (rx >= tempimage.img.Width - 1) { rx = tempimage.img.Width - 1; }
@@ -385,8 +408,8 @@ namespace BTDTextureTool
                     si.FrameInformation.Cell[i].Aw = diccell.Aw;
                     si.FrameInformation.Cell[i].Ah = diccell.Ah;
                 }
-                si.FrameInformation.Cell[i].X = img2.x+1;
-                si.FrameInformation.Cell[i].Y = img2.y+1;
+                si.FrameInformation.Cell[i].X = img2.x+2;
+                si.FrameInformation.Cell[i].Y = img2.y+2;
 
             }
            
@@ -407,5 +430,52 @@ namespace BTDTextureTool
         public int x;
         public int y;
         public Bitmap img;
+    }
+}
+public unsafe class JamBitMap
+{
+    public Bitmap bitmap;
+    public BitmapData bitmapdata;
+    public Byte* pointer;
+    public int bytesPerPixel;
+    public int Width;
+    public int Height;
+    public JamBitMap(Bitmap b)
+    {
+        bitmap = b;
+        Width = b.Width;
+        Height = b.Height;
+        Lock();
+    }
+    public Color GetPixel(int x, int y)
+    {
+        byte* currentLine = pointer + (y * bitmapdata.Stride);
+        int i = bytesPerPixel * x;
+        return Color.FromArgb(currentLine[i + 3], currentLine[i + 2], currentLine[i + 1], currentLine[i]);
+    }
+    public void SetPixel(int x, int y, Color c)
+    {
+        byte* currentLine = pointer + (y * bitmapdata.Stride);
+        int i = bytesPerPixel * x;
+        currentLine[i + 3] = c.A;
+        currentLine[i] = c.B;
+        currentLine[i + 1] = c.G;
+        currentLine[i + 2] = c.R;
+    }
+    public void Lock()
+    {
+        bitmapdata = bitmap.LockBits(new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, bitmap.PixelFormat);
+        bytesPerPixel = System.Drawing.Bitmap.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+        pointer = (byte*)bitmapdata.Scan0;
+
+
+    }
+    public void Unlock()
+    {
+        bitmap.UnlockBits(bitmapdata);
+    }
+    public void Dispose()
+    {
+        bitmap.Dispose();
     }
 }
