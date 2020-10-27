@@ -1,0 +1,36 @@
+﻿<Window x:Class="BTDTextureTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BTDTextureTool"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="222" Width="586">
+    <Grid Height="195" Margin="0,0,10,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="119*"/>
+            <ColumnDefinition Width="457*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="73*"/>
+            <RowDefinition Height="122*"/>
+        </Grid.RowDefinitions>
+        <!--Button Content="Spilt All" HorizontalAlignment="Left" Height="39" Margin="13,10,0,0" VerticalAlignment="Top" Width="149" Grid.ColumnSpan="2" Click="OnSpiltAllPressed"/-->
+        <!--Button Content="Combine All" HorizontalAlignment="Left" Height="39" Margin="13,54,0,0" VerticalAlignment="Top" Width="149" Grid.RowSpan="2" Grid.ColumnSpan="2" Click="OnCombineAllPressed"/-->
+        <Button Content="Spilt Texture" HorizontalAlignment="Left" Height="39" Margin="10,35,0,0" VerticalAlignment="Top" Width="149" Grid.ColumnSpan="2" Click="OnSpiltSinglePressed" Grid.RowSpan="2"/>
+        <Button Content="Rebuild Texture" HorizontalAlignment="Left" Height="39" Margin="10,43.333,0,0" VerticalAlignment="Top" Width="149" Grid.Row="1" Grid.ColumnSpan="2" Click="OnCombineSinglePressed"/>
+        <TextBlock HorizontalAlignment="Left" Height="20" Margin="54,10,0,0" Text="Output" TextWrapping="Wrap" VerticalAlignment="Top" Width="96" Grid.Column="1"/>
+        <Rectangle HorizontalAlignment="Left" Height="151" Margin="54,30,0,0" Stroke="Black" VerticalAlignment="Top" Width="386" Grid.RowSpan="2" Grid.Column="1"/>
+        <ScrollViewer Name="Scroller" Margin="59.4,35,19.6,20.2" Grid.Column="1" Grid.RowSpan="2" >
+            <StackPanel>
+                <ItemsControl x:Name="YEs" ItemsSource="{Binding ConsoleOutput, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock x:Name="YesDaddy" Text="{Binding Path=.}" FontFamily="Consolas" TextDecorations="{x:Null}" TextWrapping="Wrap" Focusable="False"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
