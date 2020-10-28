@@ -177,9 +177,24 @@ namespace BTDTextureTool
                 {
                     string[] wwe = animimg[j].Split('\\');
                     string imgname = wwe[wwe.Length - 1].Replace("\\", "");
+                    Bitmap b = new Bitmap(animimg[j]);
 
-                    
-                    allimages.Add(new tempimage { img = new Bitmap(Image.FromFile(animimg[j])), animname =  animname, imgname = imgname });
+
+                    Bitmap bm = new Bitmap(b.Width, b.Height);
+
+                    JamBitMap jbm = new JamBitMap(bm);
+                    JamBitMap jb = new JamBitMap(b);
+                    for (int y = 0; y < b.Height; y++)
+                    {
+                        for (int x = 0; x < b.Width; x++)
+                        {
+                            jbm.SetPixel(x, y, jb.GetPixel(x, y));
+                        }
+                    }
+                    jb.Dispose();
+                    jbm.Unlock();
+
+                    allimages.Add(new tempimage { img =bm, animname =  animname, imgname = imgname });
                     Cell cell = new Cell { Ay =0, Ah = allimages[allimages.Count - 1].img.Height , Aw = allimages[allimages.Count - 1].img.Width , Ax = 0, Name = imgname.Replace(".png",""), H = allimages[allimages.Count - 1].img.Height, W = allimages[allimages.Count - 1].img.Width };
                     si.FrameInformation.Animation[i].Cell.Add(cell);
                 }
