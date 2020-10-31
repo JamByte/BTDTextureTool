@@ -201,7 +201,23 @@ namespace BTDTextureTool
             }
             for (int i = 0; i < imgs.Length; i++)
             {
-                allimages.Add(new tempimage { img = new Bitmap(Image.FromFile(imgs[i])), animname = null });
+                Bitmap b = new Bitmap(imgs[i]);
+
+
+                Bitmap bm = new Bitmap(b.Width, b.Height);
+
+                JamBitMap jbm = new JamBitMap(bm);
+                JamBitMap jb = new JamBitMap(b);
+                for (int y = 0; y < b.Height; y++)
+                {
+                    for (int x = 0; x < b.Width; x++)
+                    {
+                        jbm.SetPixel(x, y, jb.GetPixel(x, y));
+                    }
+                }
+                jb.Dispose();
+                jbm.Unlock();
+                allimages.Add(new tempimage { img = bm, animname = null });
                 
                 string[] wwe = imgs[i].Split('\\');
                 string imgname = wwe[wwe.Length - 1].Replace("\\", "");
