@@ -5,32 +5,31 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BTDTextureTool"
         mc:Ignorable="d"
-        Title="MainWindow" Height="222" Width="586">
-    <Grid Height="195" Margin="0,0,10,0">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="119*"/>
-            <ColumnDefinition Width="457*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="73*"/>
-            <RowDefinition Height="122*"/>
-        </Grid.RowDefinitions>
-        <!--Button Content="Spilt All" HorizontalAlignment="Left" Height="39" Margin="13,10,0,0" VerticalAlignment="Top" Width="149" Grid.ColumnSpan="2" Click="OnSpiltAllPressed"/-->
-        <!--Button Content="Combine All" HorizontalAlignment="Left" Height="39" Margin="13,54,0,0" VerticalAlignment="Top" Width="149" Grid.RowSpan="2" Grid.ColumnSpan="2" Click="OnCombineAllPressed"/-->
-        <Button Content="Spilt Texture" HorizontalAlignment="Left" Height="39" Margin="10,35,0,0" VerticalAlignment="Top" Width="149" Grid.ColumnSpan="2" Click="OnSpiltSinglePressed" Grid.RowSpan="2"/>
-        <Button Content="Rebuild Texture" HorizontalAlignment="Left" Height="39" Margin="10,43.333,0,0" VerticalAlignment="Top" Width="149" Grid.Row="1" Grid.ColumnSpan="2" Click="OnCombineSinglePressed"/>
-        <TextBlock HorizontalAlignment="Left" Height="20" Margin="54,10,0,0" Text="Output" TextWrapping="Wrap" VerticalAlignment="Top" Width="96" Grid.Column="1"/>
-        <Rectangle HorizontalAlignment="Left" Height="151" Margin="54,30,0,0" Stroke="Black" VerticalAlignment="Top" Width="386" Grid.RowSpan="2" Grid.Column="1"/>
-        <ScrollViewer Name="Scroller" Margin="59.4,35,19.6,20.2" Grid.Column="1" Grid.RowSpan="2" >
-            <StackPanel>
-                <ItemsControl x:Name="YEs" ItemsSource="{Binding ConsoleOutput, Mode=OneWay}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock x:Name="YesDaddy" Text="{Binding Path=.}" FontFamily="Consolas" TextDecorations="{x:Null}" TextWrapping="Wrap" Focusable="False"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+        Title="BTD Texture Tool" Height="222" Width="580.667">
+    <Viewbox>
+        <Grid Height="195" Margin="0,0,10,0" Width="638">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="66*"/>
+                <ColumnDefinition Width="31*"/>
+                <ColumnDefinition Width="222*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="73*"/>
+                <RowDefinition Height="50*"/>
+                <RowDefinition Height="72*"/>
+            </Grid.RowDefinitions>
+            <!--Button Content="Spilt All" HorizontalAlignment="Left" Height="39" Margin="13,10,0,0" VerticalAlignment="Top" Width="149" Grid.ColumnSpan="2" Click="OnSpiltAllPressed"/-->
+            <!--Button Content="Combine All" HorizontalAlignment="Left" Height="39" Margin="13,54,0,0" VerticalAlignment="Top" Width="149" Grid.RowSpan="2" Grid.ColumnSpan="2" Click="OnCombineAllPressed"/-->
+            <Button Content="Spilt Texture" HorizontalAlignment="Left" Height="51" Margin="10,26,0,0" VerticalAlignment="Top" Width="139" Grid.ColumnSpan="2" Click="OnSpiltSinglePressed" Grid.RowSpan="2" FontSize="16"/>
+            <Button Content="Rebuild Texture" HorizontalAlignment="Left" Height="51" Margin="10,44.333,0,0" VerticalAlignment="Top" Width="139" Grid.Row="1" Grid.ColumnSpan="2" Click="OnCombineSinglePressed" Grid.RowSpan="2" FontSize="16"/>
+            <TextBlock HorizontalAlignment="Left" Height="20" Margin="28,-9,0,0" Text="Output" TextWrapping="Wrap" VerticalAlignment="Top" Width="96" Grid.Column="1" FontSize="14" Grid.ColumnSpan="2"/>
+            <Rectangle HorizontalAlignment="Left" Height="190" Margin="28,10,0,-5.333" Stroke="Black" VerticalAlignment="Top" Width="478" Grid.RowSpan="3" Grid.Column="1" Grid.ColumnSpan="2"/>
+
+            <TextBox x:Name="OutputBlock"   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+         ScrollViewer.VerticalScrollBarVisibility="Auto"    BorderThickness="0"         Text="{Binding Text, Mode=OneWay}"
+         IsReadOnly="True"
+         TextWrapping="Wrap"  FontFamily="Consolas" Padding="3" Height="171" FontSize="14" Grid.Column="1" Margin="35,18,10,5.667" Grid.RowSpan="3" Grid.ColumnSpan="2" />
+
+        </Grid>
+    </Viewbox>
 </Window>

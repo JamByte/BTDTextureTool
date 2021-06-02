@@ -53,6 +53,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>
     </DocumentationFile>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>91DC6630790BD53B23CE3A2B60A35209200E8F25</ManifestCertificateThumbprint>

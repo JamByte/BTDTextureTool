@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,6 +18,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Xml;
 
 namespace BTDTextureTool
 {
@@ -28,8 +30,8 @@ namespace BTDTextureTool
         public XMLHandler XMLhandler;
         public ImageHandler imageHandler;
         public ConsoleHandler consoleHandler;
-        ConsoleContent dc = new ConsoleContent();
-
+       // ConsoleContent dc = new ConsoleContent();
+        public int index=-99999;
         public MainWindow()
         {
             
@@ -37,7 +39,7 @@ namespace BTDTextureTool
             
             // consoleHandler = new ConsoleHandler(Scroller, Scroller);
             XMLhandler = new XMLHandler();
-            DataContext = dc;
+           // DataContext = dc;
             imageHandler = new ImageHandler();
             
         }
@@ -109,20 +111,20 @@ namespace BTDTextureTool
                 if(oldsi != null)
                 {
                     Log("XML file imported");
-                    Stopwatch sp = new Stopwatch();
-                    sp.Start();
-                    List<string> potato = imageHandler.MakeSpriteSheet(ee.SelectedPath, oldsi);
-                    sp.Stop();
-                    for (int i = 0; i < potato.Count; i++)
-                    {
-                        Log(potato[i]);
-                        
-                        
-                    }
-                    Log("Rebuilt spritehseet in " + sp.Elapsed.ToString(@"mm\:ss"));
+
+                    Thread thread = new Thread(ImageHandler.MakeSpriteSheet);
+                    ImageHandler.filepath = ee.SelectedPath;
+                    ImageHandler.oldxml = oldsi;
+                    ImageHandler.w = this;
+                    thread.Start();
+                    
+                    
 
 
-
+                }
+                else
+                {
+                    Log("The _jam.xml file assoicated with this image is not valid xml");
                 }
             }
             else
@@ -130,6 +132,7 @@ namespace BTDTextureTool
                 Log("Could not find the _jam.XML for this folder, try spilting the texture");
             }
         }
+
         private void SpiltTexture(string filepath)
         {
             Log("Selected image: " + filepath);
@@ -146,27 +149,13 @@ namespace BTDTextureTool
                 else
                 {
                     Log("XML imported!");
-                    List<string> output = new List<string>();
-                    bool imgwork = imageHandler.SpiltImage(spriteInformation, filepath, output);
-                    for (int i = 0; i < output.Count; i++)
-                    {
-                        Log(output[i]);
-
-
-                    }
-                    if (imgwork)
-                    {
-                        Log("Image successfully split!");
-
-                        string[] potato = filepath.Split('\\');
-                        string pathe = filepath.Remove(filepath.Length - (potato[potato.Length - 1].Length), (potato[potato.Length - 1].Length));
-                        pathe += @"Spilt Textures\" + spriteInformation.FrameInformation.Name + "_jam.xml";
-                        XMLhandler.ExportXML(pathe, spriteInformation);
-                    }
-                    else
-                    {
-                        Log("Error: Image Spilting Failed");
-                    }
+                    Thread thread = new Thread(ImageHandler.SpiltImage);
+                    ImageHandler.w = this;
+                    ImageHandler.file = filepath;
+                    ImageHandler.filepath = filepath;
+                    ImageHandler.si = spriteInformation;
+                    thread.Start();
+                    
                 }
             }
             else
@@ -176,9 +165,43 @@ namespace BTDTextureTool
         }
         public void Log(string text)
         {
-            dc.ConsoleInput = text;
-            dc.RunCommand();
-            Scroller.ScrollToBottom();
+            OutputBlock.Text+= (text+"\n");
+            OutputBlock.ScrollToEnd();
+        }
+        public void LogProgressBar(int i, int max, string name)
+        {
+            i++;
+            if(index == -99999)
+            {
+                index = OutputBlock.Text.Length;
+            }
+            
+            float progress = (float)i / (float)max;
+            StringBuilder sb = new StringBuilder();
+           
+            sb.AppendLine("Processing: " + name);
+            sb.Append("[");
+            for (int j = 0; j < 20; j++)
+            {
+                if (j < (progress * 20))
+                {
+                    sb.Append("*");
+                }
+                else
+                {
+                    sb.Append(" ");
+                }
+            }
+            sb.Append("]");
+            sb.Append("\n");
+            sb.AppendLine(i+"/"+max);
+            string p = OutputBlock.Text.Substring(0, index);
+            OutputBlock.Text =p+ sb.ToString();
+            if (i == max)
+            {
+                index = -99999;
+            }
+            OutputBlock.ScrollToEnd();
         }
     }
 

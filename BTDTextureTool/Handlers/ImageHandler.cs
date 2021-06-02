@@ -1,7 +1,9 @@
-﻿using ImageProcessor;
+﻿using BTDTextureTool;
+using ImageProcessor;
 using ImageProcessor.Imaging.Formats;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -17,10 +19,15 @@ namespace BTDTextureTool
     {
         public const int xstart =200;
         public const int ystart =200;
-        public const int xinc =30;
-        public const int yinc =30;
+        public const int xinc =100;
+        public const int yinc =100;
+        public static string filepath;
+        public static SpriteInformation oldxml;
+        public static SpriteInformation si;
+        public static MainWindow w;
+        public static string file;
 
-        public bool SpiltImage(SpriteInformation si, string file, List<string> output)
+        public static void SpiltImage()
         {
             //  try
             // {
@@ -45,8 +52,8 @@ namespace BTDTextureTool
             string name = potato[potato.Length - 1].Split('.')[0];
             if(name != si.FrameInformation.Name)
             {
-                output.Add("Name of Image does not match the name of the image in the xml");
-                output.Add("Files will be saved to the folder with the name of the image");
+                AsyncLogger.AsyncLog(w,"Name of Image does not match the name of the image in the xml");
+                AsyncLogger.AsyncLog(w, "Files will be saved to the folder with the name of the image");
             }
 
 
@@ -73,7 +80,7 @@ namespace BTDTextureTool
                             else if (imagecrop.X + imagecrop.Width > bm.Width || imagecrop.Y + imagecrop.Height > bm.Height || imagecrop.X < 0 || imagecrop.Y < 0)
                             {
 
-                                output.Add(si.FrameInformation.Animation[a].Cell[i].Name + " is out of bounds, filling out of bounds parts with blank pixels.");
+                                AsyncLogger.AsyncLog(w, si.FrameInformation.Animation[a].Cell[i].Name + " is out of bounds, filling out of bounds parts with blank pixels.");
                                 Bitmap bmap = new Bitmap(si.FrameInformation.Animation[a].Cell[i].W, si.FrameInformation.Animation[a].Cell[i].H);
                                 for (int x = 0; x < si.FrameInformation.Animation[a].Cell[i].W; x++)
                                 {
@@ -116,7 +123,7 @@ namespace BTDTextureTool
                         else if (imagecrop.X+imagecrop.Width>bm.Width|| imagecrop.Y + imagecrop.Height > bm.Height||imagecrop.X<0||imagecrop.Y<0)
                         {
 
-                            output.Add(si.FrameInformation.Cell[i].Name + " is out of bounds, filling out of bounds parts with blank pixels.");
+                            AsyncLogger.AsyncLog(w, si.FrameInformation.Cell[i].Name + " is out of bounds, filling out of bounds parts with blank pixels.");
                             Bitmap bmap = new Bitmap(si.FrameInformation.Cell[i].W, si.FrameInformation.Cell[i].H);
                             for (int x = 0; x < si.FrameInformation.Cell[i].W; x++)
                             {
@@ -147,16 +154,21 @@ namespace BTDTextureTool
                         outputimage.Save(path + @"\" + si.FrameInformation.Cell[i].Name + ".png");
                     }
             bm.Dispose();
-                return true;
-           // }
-            //catch
-            //{
-                return false;
-            //}
+
+            AsyncLogger.AsyncLog(w,"Image successfully split!");
+
+            string[] potato2 = filepath.Split('\\');
+            string pathe = filepath.Remove(filepath.Length - (potato2[potato2.Length - 1].Length), (potato2[potato2.Length - 1].Length));
+            pathe += @"Spilt Textures\" + si.FrameInformation.Name + "_jam.xml";
+            XMLHandler XMLhandler = new XMLHandler();
+            XMLhandler.ExportXML(pathe, si);
 
         }
-        public List<string> MakeSpriteSheet(string filepath, SpriteInformation oldxml)
+        public static void MakeSpriteSheet()
         {
+            Stopwatch sp = new Stopwatch();
+            sp.Start();
+
             string[] anims = Directory.GetDirectories(filepath);
             string[] imgs = Directory.GetFiles(filepath);
             SpriteInformation si = new SpriteInformation();
@@ -179,55 +191,199 @@ namespace BTDTextureTool
                     string imgname = wwe[wwe.Length - 1].Replace("\\", "");
                     Bitmap b = new Bitmap(animimg[j]);
 
-
-                    Bitmap bm = new Bitmap(b.Width, b.Height);
-
-                    JamBitMap jbm = new JamBitMap(bm);
-                    JamBitMap jb = new JamBitMap(b);
-                    for (int y = 0; y < b.Height; y++)
+                    if (b.PixelFormat != PixelFormat.Format32bppArgb)
                     {
-                        for (int x = 0; x < b.Width; x++)
+                        Bitmap bfixedpixel = b.Clone(new Rectangle(0, 0, b.Width, b.Height), PixelFormat.Format32bppArgb);
+                        b.Dispose();
+                        b = bfixedpixel;
+                    }
+
+                    JamBitMap jb = new JamBitMap(b);
+
+
+                    int Croptopw = -1;
+                    int Cropbottomw = -1;
+                    int Cropleftw = -1;
+                    int Croprightw = -1;
+
+
+                    for (int y = 0; y < jb.Height && Croptopw == -1; y++)
+                    {
+                        for (int x = 0; x < jb.Width; x++)
                         {
-                            jbm.SetPixel(x, y, jb.GetPixel(x, y));
+                            if (jb.GetPixel(x, y).A != 0)
+                            {
+                                Croptopw = y;
+                                break;
+                            }
                         }
                     }
+                    for (int y = jb.Height - 1; y > 0 && Cropbottomw == -1; y--)
+                    {
+                        for (int x = 0; x < jb.Width; x++)
+                        {
+                            if (jb.GetPixel(x, y).A != 0)
+                            {
+                                Cropbottomw = y;
+                                break;
+                            }
+                        }
+                    }
+
+                    for (int x = 0; x < jb.Width && Cropleftw == -1; x++)
+                    {
+                        for (int y = 0; y < jb.Height; y++)
+                        {
+                            if (jb.GetPixel(x, y).A != 0)
+                            {
+                                Cropleftw = x;
+                                break;
+                            }
+                        }
+                    }
+                    for (int x = jb.Width - 1; x > 0 && Croprightw == -1; x--)
+                    {
+                        for (int y = 0; y < jb.Height; y++)
+                        {
+                            if (jb.GetPixel(x, y).A != 0)
+                            {
+                                Croprightw = x;
+                                break;
+                            }
+                        }
+                    }
+
+
+                    if (Croprightw == -1) { Croprightw = 1; }
+                    if (Cropbottomw == -1) { Cropbottomw = 1; }
+                    Bitmap bm = new Bitmap((Croprightw - Cropleftw) + 1, (Cropbottomw - Croptopw) + 1);
+
+                    JamBitMap jbm = new JamBitMap(bm);
+                    int x2 = 0;
+                    int y2 = 0;
+                    for (int y = Croptopw; y < Cropbottomw+1; y++)
+                    {
+                        for (int x = Cropleftw; x < Croprightw+1; x++)
+                        {
+                            jbm.SetPixel(x2, y2, jb.GetPixel(x, y));
+
+
+                            x2++;
+                        }
+                        y2++;
+
+                        x2 = 0;
+                    }
+
                     jb.Dispose();
                     jbm.Unlock();
 
+
                     allimages.Add(new tempimage { img =bm, animname =  animname, imgname = imgname });
-                    Cell cell = new Cell { Ay =0, Ah = allimages[allimages.Count - 1].img.Height , Aw = allimages[allimages.Count - 1].img.Width , Ax = 0, Name = imgname.Replace(".png",""), H = allimages[allimages.Count - 1].img.Height, W = allimages[allimages.Count - 1].img.Width };
+                    Cell cell = new Cell { Ay = ((Croptopw) - (jb.Height - Cropbottomw)) / 2, Ah = allimages[allimages.Count - 1].img.Height , Aw = allimages[allimages.Count - 1].img.Width , Ax = ((Cropleftw) - (jb.Width - Croprightw)) / 2, Name = imgname.Replace(".png",""), H = allimages[allimages.Count - 1].img.Height, W = allimages[allimages.Count - 1].img.Width };
                     si.FrameInformation.Animation[i].Cell.Add(cell);
                 }
             }
             for (int i = 0; i < imgs.Length; i++)
             {
                 Bitmap b = new Bitmap(imgs[i]);
-
-
-                Bitmap bm = new Bitmap(b.Width, b.Height);
-
-                JamBitMap jbm = new JamBitMap(bm);
-                JamBitMap jb = new JamBitMap(b);
-                for (int y = 0; y < b.Height; y++)
+                if (b.PixelFormat != PixelFormat.Format32bppArgb)
                 {
-                    for (int x = 0; x < b.Width; x++)
+                    Bitmap bfixedpixel = b.Clone(new Rectangle(0, 0, b.Width, b.Height), PixelFormat.Format32bppArgb);
+                    b.Dispose();
+                    b = bfixedpixel;
+                }
+                JamBitMap jb = new JamBitMap(b);
+
+
+                int Croptopw = -1;
+                int Cropbottomw = -1;
+                int Cropleftw = -1;
+                int Croprightw = -1;
+
+
+                for (int y = 0; y < jb.Height && Croptopw == -1; y++)
+                {
+                    for (int x = 0; x < jb.Width; x++)
                     {
-                        jbm.SetPixel(x, y, jb.GetPixel(x, y));
+                        if (jb.GetPixel(x, y).A != 0)
+                        {
+                            Croptopw = y;
+                            break;
+                        }
                     }
                 }
-                jb.Dispose();
-                jbm.Unlock();
-                allimages.Add(new tempimage { img = bm, animname = null });
-                
+                for (int y = jb.Height - 1; y > 0 && Cropbottomw == -1; y--)
+                {
+                    for (int x = 0; x < jb.Width; x++)
+                    {
+                        if (jb.GetPixel(x, y).A != 0)
+                        {
+                            Cropbottomw = y;
+                            break;
+                        }
+                    }
+                }
+
+                for (int x = 0; x < jb.Width && Cropleftw == -1; x++)
+                {
+                    for (int y = 0; y < jb.Height; y++)
+                    {
+                        if (jb.GetPixel(x, y).A != 0)
+                        {
+                            Cropleftw = x;
+                            break;
+                        }
+                    }
+                }
+                for (int x = jb.Width - 1; x > 0 && Croprightw == -1; x--)
+                {
+                    for (int y = 0; y < jb.Height; y++)
+                    {
+                        if (jb.GetPixel(x, y).A != 0)
+                        {
+                            Croprightw = x;
+                            break;
+                        }
+                    }
+                }
+
+
+                if (Croprightw == -1) { Croprightw = 1; }
+                if (Cropbottomw == -1) { Cropbottomw = 1; }
+                Bitmap bm = new Bitmap((Croprightw -Cropleftw) +1,(Cropbottomw - Croptopw)+1);
+
+                JamBitMap jbm = new JamBitMap(bm);
+                int x2 = 0;
+                int y2 = 0;
+                for (int y = Croptopw; y < Cropbottomw+1; y++)
+                {
+                    for (int x = Cropleftw; x < Croprightw+1; x++)
+                    {
+                        jbm.SetPixel(x2, y2, jb.GetPixel(x, y));
+
+
+                        x2++;
+                    }
+                    y2++;
+
+                    x2 = 0;
+                }
+
                 string[] wwe = imgs[i].Split('\\');
                 string imgname = wwe[wwe.Length - 1].Replace("\\", "");
-                Cell cell = new Cell { Ay = 0, Ah = allimages[allimages.Count - 1].img.Height , Aw = allimages[allimages.Count - 1].img.Width , Ax = 0, Name = imgname.Replace(".png", ""), H = allimages[allimages.Count-1].img.Height, W = allimages[allimages.Count - 1].img.Width };
+                jb.Dispose();
+                jbm.Unlock();
+
+
+                allimages.Add(new tempimage { img = bm, animname = null, imgname = imgname });
+                Cell cell = new Cell { Ay = ((Croptopw) - (jb.Height - Cropbottomw)) / 2, Ah = allimages[allimages.Count - 1].img.Height , Aw = allimages[allimages.Count - 1].img.Width , Ax = ((Cropleftw) - (jb.Width - Croprightw)) / 2, Name = imgname.Replace(".png", ""), H = allimages[allimages.Count-1].img.Height, W = allimages[allimages.Count - 1].img.Width };
                 si.FrameInformation.Cell.Add(cell);
             }
             List<tempimage> allimages2 = new List<tempimage>(allimages.ToArray());
             allimages.Sort((first, second) => {return (second.img.Width * second.img.Height)-(first.img.Width * first.img.Height) ; });
-            List<string> Consolelog = new List<string>();
-            Consolelog.Add(allimages.Count + " Images Found");
+
+            AsyncLogger.AsyncLog(w, allimages.Count + " Images Found");
 
             List<List<ushort>> gird = new List<List<ushort>>(xstart);
             for (int i = 0; i < ystart; i++)
@@ -241,6 +397,8 @@ namespace BTDTextureTool
             ushort ycount = ystart;
             for (int i = 0; i < allimages.Count; i++)
             {
+               
+                AsyncLogger.AsyncProgress(w,i, allimages.Count, allimages[i].imgname);
                 ushort xsize = (ushort)((ushort)allimages[i].img.Width+4);//2 for padding and 2 for duplicate pixels
                 ushort ysize = (ushort)((ushort)allimages[i].img.Height+4);//^
 
@@ -325,6 +483,7 @@ namespace BTDTextureTool
                 }
 
             }
+            AsyncLogger.AsyncLog(w, "Building Final Image");
             Bitmap img = new Bitmap(xcount, ycount);
             for (int x = 0; x < xcount; x++)
             {
@@ -376,7 +535,9 @@ namespace BTDTextureTool
             sb.Append('\\');
             sb.Append(pathspilt[pathspilt.Length - 1]);
             string newpath = sb.ToString();
-           // Consolelog.Add(newpath);
+            // Consolelog.Add(newpath);
+            //for no reason 0,0 needs to be opaque 
+            img.SetPixel(0, 0, Color.Black);
             img.Save(sb.ToString()+".png");
             Dictionary<string, Cell> cells = new Dictionary<string, Cell>(); ;
             for (int i = 0; i < oldxml.FrameInformation.Animation.Count; i++)
@@ -389,7 +550,7 @@ namespace BTDTextureTool
                     }
                     catch
                     {
-                        Consolelog.Add(oldxml.FrameInformation.Animation[i].Cell[j].Name + " is listed multiple times in " + pathspilt[pathspilt.Length - 1] + "_jam.xml. Only the first entry has been added");
+                        AsyncLogger.AsyncLog(w, oldxml.FrameInformation.Animation[i].Cell[j].Name + " is listed multiple times in " + pathspilt[pathspilt.Length - 1] + "_jam.xml. Only the first entry has been added");
                     }
                 }
             }
@@ -401,7 +562,7 @@ namespace BTDTextureTool
                 }
                 catch
                 {
-                    Consolelog.Add(oldxml.FrameInformation.Cell[i].Name + " is listed multiple times in "+ pathspilt[pathspilt.Length - 1] + "_jam.xml. Only the first entry has been added");
+                    AsyncLogger.AsyncLog(w, oldxml.FrameInformation.Cell[i].Name + " is listed multiple times in "+ pathspilt[pathspilt.Length - 1] + "_jam.xml. Only the first entry has been added");
                 }
             }
             //xml 
@@ -416,13 +577,13 @@ namespace BTDTextureTool
                     if (exists)
                     {
                         Cell diccell = cells[si.FrameInformation.Animation[j].Cell[i].Name];
-                        si.FrameInformation.Animation[j].Cell[i].Ax = diccell.Ax;
-                        si.FrameInformation.Animation[j].Cell[i].Ay = diccell.Ay;
+                        si.FrameInformation.Animation[j].Cell[i].Ax += diccell.Ax;
+                        si.FrameInformation.Animation[j].Cell[i].Ay += diccell.Ay;
                         si.FrameInformation.Animation[j].Cell[i].Aw = diccell.Aw;
                         si.FrameInformation.Animation[j].Cell[i].Ah = diccell.Ah;
                     }
-                    si.FrameInformation.Animation[j].Cell[i].X = img2.x+1;
-                    si.FrameInformation.Animation[j].Cell[i].Y = img2.y+1;
+                    si.FrameInformation.Animation[j].Cell[i].X = img2.x+2;
+                    si.FrameInformation.Animation[j].Cell[i].Y = img2.y+2;
                 }
 
             }
@@ -434,8 +595,8 @@ namespace BTDTextureTool
                 if (exists)
                 {
                     Cell diccell = cells[si.FrameInformation.Cell[i].Name];
-                    si.FrameInformation.Cell[i].Ax = diccell.Ax;
-                    si.FrameInformation.Cell[i].Ay = diccell.Ay;
+                    si.FrameInformation.Cell[i].Ax += diccell.Ax;
+                    si.FrameInformation.Cell[i].Ay += diccell.Ay;
                     si.FrameInformation.Cell[i].Aw = diccell.Aw;
                     si.FrameInformation.Cell[i].Ah = diccell.Ah;
                 }
@@ -450,8 +611,10 @@ namespace BTDTextureTool
             si.FrameInformation.Type = "png";
             XMLHandler xh = new XMLHandler();
             xh.ExportXML(sb.ToString()+".xml", si);
-            Consolelog.Add("Saved image to " + sb.ToString() + ".png");
-            return Consolelog;
+            AsyncLogger.AsyncLog(w, "Saved image to " + sb.ToString() + ".png");
+
+            sp.Stop();
+            AsyncLogger.AsyncLog(w, "Rebuilt spritehseet in " + sp.Elapsed.ToString(@"mm\:ss"));
         }
     }
     public class tempimage
@@ -508,5 +671,24 @@ public unsafe class JamBitMap
     public void Dispose()
     {
         bitmap.Dispose();
+    }
+}
+public class AsyncLogger
+{
+    public static void AsyncLog(MainWindow w, String text)
+    {
+        w.Dispatcher.BeginInvoke(new Action(()=>{
+
+            w.Log(text);
+
+        }), System.Windows.Threading.DispatcherPriority.Background);
+    }
+    public static void AsyncProgress(MainWindow w, int i, int max, String text)
+    {
+        w.Dispatcher.BeginInvoke(new Action(() => {
+
+            w.LogProgressBar(i,max,text);
+
+        }), System.Windows.Threading.DispatcherPriority.Background);
     }
 }
